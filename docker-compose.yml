@@ -1,0 +1,42 @@
+services:
+
+  mysql:
+    container_name: my_database
+    image: mariadb
+    restart: always
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+      - MYSQL_DATABASE=my_database
+    volumes:
+      - my_database:/var/lib/mysql
+      - type: bind
+        source: ./mysql/
+        target: /docker-entrypoint-initdb.d
+
+    ports:
+      - 3306:3306
+
+  rocket:
+    container_name: rocket
+    build: ./tfg-backend
+    links:
+      - mysql
+    depends_on:
+      - mysql
+    environment:
+      - DATABASE_URL=mysql://root:@my_database:3306/my_database
+      - SECRET=Penalmao123
+      - SQLX_OFFLINE=true
+    ports:
+      - 8000:8000
+
+  vue-app:
+    container_name: vue_app
+    build: ./tfg-frontend
+    depends_on:
+      - rocket
+    ports:
+      - 8080:8080
+
+volumes:
+  my_database:
